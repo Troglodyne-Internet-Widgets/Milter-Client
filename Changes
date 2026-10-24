@@ -1,5 +1,9 @@
 Revision history for Milter-Client
 
+0.002 2026-10-24 TEODESIAN
+    - sendmail takes SMFIR_SKIP, the answer of a milter that wants no more of the body, and sends the end of the message; before, it ended the conversation there, and milterprobe died on opendkim
+    - Export SMFIR_SKIP, in :constants, and SMFIP_SKIP, in :protocol
+
 0.001 2026-10-24 TEODESIAN
     - Milter::Client moves here from Milter-Recipe, so that testing a milter does not install yamilter
     - Add milterprobe, which gives a milter one message as an MTA would, and prints what the milter did

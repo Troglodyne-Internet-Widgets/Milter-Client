@@ -110,6 +110,7 @@ our %EXPORT_TAGS = (
           SMFIR_CHGFROM
           SMFIR_TEMPFAIL
           SMFIR_REPLYCODE
+          SMFIR_SKIP
           SMFIA_UNKNOWN
           SMFIA_UNIX
           SMFIA_INET
@@ -131,6 +132,7 @@ our %EXPORT_TAGS = (
           SMFIP_NR_HDR
           SMFIP_NOUNKNOWN
           SMFIP_NODATA
+          SMFIP_SKIP
           SMFIP_NR_CONN
           SMFIP_NR_HELO
           SMFIP_NR_MAIL
@@ -181,6 +183,7 @@ use constant SMFIR_REJECT      => 'r';
 use constant SMFIR_CHGFROM     => 'e';    # Sendmail 8.14+
 use constant SMFIR_TEMPFAIL    => 't';
 use constant SMFIR_REPLYCODE   => 'y';
+use constant SMFIR_SKIP        => 's';    # v6, to a body chunk: send no more of the body
 
 # Socktypes
 use constant SMFIA_UNKNOWN => 'U';
@@ -199,6 +202,7 @@ use constant SMFIP_NOEOH     => 0x00000040;
 use constant SMFIP_NR_HDR    => 0x00000080;
 use constant SMFIP_NOUNKNOWN => 0x00000100;
 use constant SMFIP_NODATA    => 0x00000200;
+use constant SMFIP_SKIP      => 0x00000400;    # offered by an MTA which takes SMFIR_SKIP
 use constant SMFIP_NR_CONN   => 0x00001000;
 use constant SMFIP_NR_HELO   => 0x00002000;
 use constant SMFIP_NR_MAIL   => 0x00004000;
@@ -307,6 +311,7 @@ No reply is waited for after SMFIC_MACRO or SMFIC_QUIT, as milters do not send o
 The milter's answer to SMFIC_OPTNEG is obeyed as an MTA obeys it.
 A command for a step the milter asked to leave out is not sent, and neither is a macro for it.
 No reply is waited for to a step the milter said it sends no reply to.
+A milter which answers a body chunk with SMFIR_SKIP is sent no more of the body, and the end of the message follows.
 Without SMFIC_OPTNEG, every command is sent and every reply waited for.
 
 Without options, a milter which says nothing within a second is presumed to want you to continue.
@@ -333,6 +338,7 @@ sub sendmail {
     my %opts = ref $cmds[0] eq 'HASH' ? %{ shift @cmds } : ();
     my @mods;
     my $protocol = 0;
+    my $skip_body;
 
     # A milter which hangs up is reported (or presumed to continue), not fatal
     local $SIG{PIPE} = 'IGNORE';
@@ -341,6 +347,7 @@ sub sendmail {
         my $action = $args->[0];
         my ( $left_out, $no_reply ) = @{ $STEP{ $action eq SMFIC_MACRO ? $args->[1] : $action } // [ 0, 0 ] };
         next if $protocol & $left_out;
+        next if $skip_body && $action eq SMFIC_BODY;
 
         # The single string form of SMFIC_HEADER needs the value terminator added
         my @args = ( $action eq SMFIC_HEADER && @$args == 2 ) ? ( @$args, '' ) : @$args;
@@ -370,6 +377,10 @@ sub sendmail {
         # The milter's version, actions and protocol steps, then any macros it wants, which we send regardless
         if ( $res eq SMFIC_OPTNEG ) {
             ( undef, undef, $protocol ) = unpack( 'N N N', $payload );
+            next;
+        }
+        if ( $res eq SMFIR_SKIP && $action eq SMFIC_BODY ) {
+            $skip_body = 1;
             next;
         }
         return ( $res, $payload, \@mods ) if $res ne SMFIR_CONTINUE;
