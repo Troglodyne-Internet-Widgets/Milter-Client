@@ -195,15 +195,25 @@ Header names and values are as the milter sent them, folding and all.
 
 Dies on a code it does not know.
 
+# BUGS
+
+Please report any bugs or feature requests on the bugtracker website
+[https://github.com/Troglodyne-Internet-Widgets/Milter-Client/issues](https://github.com/Troglodyne-Internet-Widgets/Milter-Client/issues)
+
+When submitting a bug or request, please include a test-file or a
+patch to an existing test-file that illustrates the bug or desired
+feature.
+
 # AUTHORS
 
 Current Maintainers:
 
 - George S. Baugh <george@troglodyne.net>
 
-# CONTRIBUTOR
+# CONTRIBUTORS
 
-Andy Baugh <andy@troglodyne.net>
+- Andy Baugh <andy@troglodyne.net>
+- troglodyne-bot <morpheus@troglodyne.net>
 
 # COPYRIGHT AND LICENSE
 
