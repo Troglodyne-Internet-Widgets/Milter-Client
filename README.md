@@ -4,7 +4,7 @@ Milter::Client - Send commands to milters and get responses
 
 # VERSION
 
-version 0.001
+version 0.002
 
 # SYNOPSIS
 
@@ -91,6 +91,7 @@ No reply is waited for after SMFIC\_MACRO or SMFIC\_QUIT, as milters do not send
 The milter's answer to SMFIC\_OPTNEG is obeyed as an MTA obeys it.
 A command for a step the milter asked to leave out is not sent, and neither is a macro for it.
 No reply is waited for to a step the milter said it sends no reply to.
+A milter which answers a body chunk with SMFIR\_SKIP is sent no more of the body, and the end of the message follows.
 Without SMFIC\_OPTNEG, every command is sent and every reply waited for.
 
 Without options, a milter which says nothing within a second is presumed to want you to continue.

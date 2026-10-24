@@ -95,6 +95,14 @@ subtest 'negotiation' => sub {
     ( $path, $done ) = fake_milter( protocol => SMFIP_NOCONNECT, replies => $eom );
     Milter::Client::sendmail( Milter::Client::milter_socket($path), { timeout => 1 }, @cmds );
     is( [ grep { $_->[0] eq SMFIC_MACRO } $done->() ], [], 'nor is a macro for a step that is left out' );
+
+    # Two chunks of body, of which the milter wants only the first
+    my @long = Milter::Client::conversation( "Subject: s\n\n" . ( 'x' x MILTER_CHUNK_SIZE ) . "y\n" );
+    ( $path, $done ) = fake_milter( replies => { B => [ packet(SMFIR_SKIP) ], %$eom } );
+    ($code) = Milter::Client::sendmail( Milter::Client::milter_socket($path), { timeout => 1 }, @long );
+    @letters = map { $_->[0] } $done->();
+    is( $code,                                                         SMFIR_ACCEPT,                  'a milter which skips the body still reaches the verdict' );
+    is( [ grep { $_ eq SMFIC_BODY || $_ eq SMFIC_BODYEOB } @letters ], [ SMFIC_BODY, SMFIC_BODYEOB ], '... and is sent no more of the body, then the end of the message' );
 };
 
 subtest 'milter_socket' => sub {
