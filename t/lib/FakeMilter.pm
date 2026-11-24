@@ -4,6 +4,7 @@ use 5.014;
 use strict;
 use warnings FATAL => 'all';
 use re '/aa';
+no autovivification;
 
 use File::Temp;
 use IO::Socket::UNIX;

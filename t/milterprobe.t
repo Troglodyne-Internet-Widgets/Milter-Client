@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#!perl
 use 5.014;
 use strict;
 use warnings FATAL => 'all';
@@ -72,7 +72,9 @@ subtest 'describe' => sub {
         'quarantine held'                   => { action => 'quarantine',    reason => 'held' },
         'discard'                           => { action => 'discard' },
     );
-    is( MilterProbe::describe( $cases{$_} ), $_, $_ ) for sort keys %cases;
+    foreach my $name ( sort keys %cases ) {
+        is( MilterProbe::describe( $cases{$name} ), $name, $name );
+    }
 };
 
 subtest 'what the milter did' => sub {
@@ -94,10 +96,10 @@ subtest 'what the milter did' => sub {
     is( $out,  "add_header Authentication-Results: mx.test.test;\tdmarc=pass\ndelete_header 1 Authentication-Results\naccept\n", 'each change, unfolded, then the verdict' );
 
     my %sent = map { $_->[0] => $_->[1] } reverse @got;
-    is( [ unpack( 'Z* a n Z*', $sent{ SMFIC_CONNECT() } ) ],                                  [ '[192.0.2.1]', SMFIA_INET, 25, '192.0.2.1' ],                                               'the milter is told the client address' );
-    is( [ grep { $_->[0] eq SMFIC_MACRO && substr( $_->[1], 0, 1 ) eq SMFIC_CONNECT } @got ], [ [ SMFIC_MACRO, SMFIC_CONNECT . "j\0mta.test.test\0" ] ],                                    'a --macro replaces the default' );
-    is( [ map { [ unpack( 'Z* Z*', $_->[1] ) ] } grep { $_->[0] eq SMFIC_HEADER } @got ],     [ [ 'Authentication-Results', 'elsewhere.test.test; spf=pass' ], [ 'From', 'a@test.test' ] ], 'each --header, in order' );
-    is( $sent{ SMFIC_BODY() },                                                                "A probe.\r\n",                                                                               'the body, with CRLF' );
+    is( [ unpack( 'Z* a n Z*', $sent{ SMFIC_CONNECT() } ) ],                                                   [ '[192.0.2.1]', SMFIA_INET, 25, '192.0.2.1' ],                                               'the milter is told the client address' );
+    is( [ grep { local ($_) = $_; $_->[0] eq SMFIC_MACRO && substr( $_->[1], 0, 1 ) eq SMFIC_CONNECT } @got ], [ [ SMFIC_MACRO, SMFIC_CONNECT . "j\0mta.test.test\0" ] ],                                    'a --macro replaces the default' );
+    is( [ map { [ unpack( 'Z* Z*', $_->[1] ) ] } grep { local ($_) = $_; $_->[0] eq SMFIC_HEADER } @got ],     [ [ 'Authentication-Results', 'elsewhere.test.test; spf=pass' ], [ 'From', 'a@test.test' ] ], 'each --header, in order' );
+    is( $sent{ SMFIC_BODY() },                                                                                 "A probe.\r\n",                                                                               'the body, with CRLF' );
 };
 
 subtest '--message and --json' => sub {
@@ -109,9 +111,9 @@ subtest '--message and --json' => sub {
     my ( $path, $done ) = fake_milter( replies => { E => [ packet( SMFIR_REPLYCODE, "550 5.7.1 Go away\0" ) ] } );
     my ( $exit, $out )  = probe( '--socket', "unix:$path", '--message', "$dir/message", '--header', 'X-First: 1', '--json' );
     my @got = $done->();
-    is( $exit,                                                                         0,                                                                                 'a refusal is still a verdict, so it exits 0' );
-    is( Cpanel::JSON::XS->new->decode($out),                                           { verdict => { action => 'reply', reply => '550 5.7.1 Go away' }, changes => [] }, 'JSON holds the verdict and the changes' );
-    is( [ map { ( unpack( 'Z*', $_->[1] ) ) } grep { $_->[0] eq SMFIC_HEADER } @got ], [ 'X-First', 'From' ],                                                             'a --header goes ahead of the header of the message' );
+    is( $exit,                                                                                          0,                                                                                 'a refusal is still a verdict, so it exits 0' );
+    is( Cpanel::JSON::XS->new->decode($out),                                                            { verdict => { action => 'reply', reply => '550 5.7.1 Go away' }, changes => [] }, 'JSON holds the verdict and the changes' );
+    is( [ map { ( unpack( 'Z*', $_->[1] ) ) } grep { local ($_) = $_; $_->[0] eq SMFIC_HEADER } @got ], [ 'X-First', 'From' ],                                                             'a --header goes ahead of the header of the message' );
 };
 
 subtest 'a milter that says nothing' => sub {
