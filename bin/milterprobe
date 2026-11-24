@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#!perl
 
 package MilterProbe;
 
@@ -140,7 +140,7 @@ sub main {
         );
     } or return print_synopsis( 2, $@ );
 
-    my $sock = eval { Milter::Client::milter_socket( $opts{socket}, $opts{timeout} ) } or return print_synopsis( 2, $@ );
+    my $sock = eval { Milter::Client::milter_socket( @opts{qw{socket timeout}} ) } or return print_synopsis( 2, $@ );
     my ( $code, $payload, $mods ) = Milter::Client::sendmail( $sock, { timeout => $opts{timeout} }, @cmds );
 
     my $verdict = Milter::Client::decode( $code, $payload );
@@ -149,7 +149,9 @@ sub main {
         print Cpanel::JSON::XS->new->canonical->encode( { verdict => $verdict, changes => \@changes } ), "\n";
     }
     else {
-        print describe($_), "\n" for @changes, $verdict;
+        foreach my $line ( @changes, $verdict ) {
+            print describe($line), "\n";
+        }
     }
     return ( $code eq CLIENT_TIMEOUT || $code eq CLIENT_EOF ) ? 1 : 0;
 }
