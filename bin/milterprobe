@@ -158,10 +158,12 @@ sub main {
 
 =head1 FUNCTIONS
 
-=head2 $raw = message(\%opts)
+=head2 message(\%opts)
 
 The message to send: each C<--header>, then the header and body of C<--message>, or else a blank line and C<--body>.
 Dies when C<--message> cannot be read, or a C<--header> is not C<Name: value>.
+
+    my $raw = message(\%opts);
 
 =cut
 
@@ -180,9 +182,11 @@ sub message {
     return $head . $raw;
 }
 
-=head2 $line = describe(\%what)
+=head2 describe(\%what)
 
 One line for a change or a verdict, as C<decode()> in L<Milter::Client> gives it.
+
+    my $line = describe(\%what);
 
 =cut
 
