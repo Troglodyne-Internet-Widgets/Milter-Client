@@ -291,7 +291,7 @@ my $read_reply = sub {
 
 =head1 FUNCTIONS
 
-=head2 ($code, $payload, $modifications) = sendmail($socket, [\%options], @commands)
+=head2 sendmail($socket, [\%options], @commands)
 
 Send commands to a milter & read the responses.
 
@@ -327,6 +327,8 @@ When given, a milter which does not reply in time returns C<CLIENT_TIMEOUT>, and
 =back
 
 See Synopsis for more details.
+
+    my ($code, $payload, $modifications) = sendmail($socket, \%options, @commands);
 
 =cut
 
@@ -388,7 +390,7 @@ sub sendmail {
     return ( SMFIR_CONTINUE, undef, \@mods );
 }
 
-=head2 $socket = milter_socket($spec, [$timeout])
+=head2 milter_socket($spec, [$timeout])
 
 Connect to a milter, and return the socket for C<sendmail()>.
 
@@ -400,6 +402,8 @@ The host defaults to localhost.
 C<$timeout>, in seconds, applies to the connect.
 
 Dies when it cannot connect, or when C<$spec> is none of those.
+
+    my $socket = milter_socket($spec, [$timeout]);
 
 =cut
 
@@ -418,7 +422,7 @@ sub milter_socket {
     return $sock;
 }
 
-=head2 @commands = conversation($raw, [\%envelope])
+=head2 conversation($raw, [\%envelope])
 
 The commands an MTA would send a milter for one message on a connection of its own, for C<sendmail()>:
 OPTNEG offering every version 6 action and step, CONNECT, HELO, MAIL, RCPT, DATA,
@@ -460,6 +464,8 @@ A hashref of the stage (C<connect>, C<helo>, C<mail>, C<rcpt>, C<data>, C<eoh> o
 =back
 
 Dies on a stage it does not know.
+
+    my @commands = conversation($raw, \%envelope);
 
 =cut
 
@@ -506,7 +512,7 @@ sub conversation {
     return ( [ SMFIC_OPTNEG, 6, 0x1FF, 0x1FFFFF ], @cmds, [SMFIC_QUIT] );
 }
 
-=head2 ($fields, $body) = split_message($raw)
+=head2 split_message($raw)
 
 Split a raw message the way an MTA would before handing it to a milter.
 
@@ -515,6 +521,8 @@ The value has the single space after the colon removed, and keeps any folding (w
 Lines in the header which are not a header field are dropped.
 
 C<$body> is everything after the blank line which ends the header.
+
+    my ($fields, $body) = split_message($raw);
 
 =cut
 
@@ -532,11 +540,13 @@ sub split_message {
     return ( \@fields, $body );
 }
 
-=head2 @commands = body_chunks($body)
+=head2 body_chunks($body)
 
 Split a message body into SMFIC_BODY commands no bigger than MILTER_CHUNK_SIZE, as an MTA would.
 
 An empty body yields no commands.
+
+    my @commands = body_chunks($body);
 
 =cut
 
@@ -549,7 +559,7 @@ sub body_chunks {
     return @chunks;
 }
 
-=head2 \%what = decode($code, $payload)
+=head2 decode($code, $payload)
 
 What a reply from C<sendmail()> means, as a hashref with an C<action> and the fields that action has.
 It takes a modification, as C<@$_> of each in C<$modifications>, or the final code and payload.
@@ -584,6 +594,8 @@ C<index> counts from 1 among the headers of that name for a change, and among al
 Header names and values are as the milter sent them, folding and all.
 
 Dies on a code it does not know.
+
+    my $what = decode($code, $payload);
 
 =cut
 
